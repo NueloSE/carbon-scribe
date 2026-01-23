@@ -3,6 +3,11 @@ package compliance
 import (
 	"context"
 
+	"carbon-scribe/project-portal/project-portal-backend/internal/compliance/audit"
+	"carbon-scribe/project-portal/project-portal-backend/internal/compliance/privacy"
+	"carbon-scribe/project-portal/project-portal-backend/internal/compliance/requests"
+	"carbon-scribe/project-portal/project-portal-backend/internal/compliance/retention"
+
 	"github.com/google/uuid"
 )
 
@@ -11,19 +16,19 @@ type Service interface {
 	// Retention
 	CreateRetentionPolicy(ctx context.Context, policy *RetentionPolicy) error
 	ListRetentionPolicies(ctx context.Context) ([]RetentionPolicy, error)
-	
+
 	// Requests
 	CreatePrivacyRequest(ctx context.Context, req *PrivacyRequest) error
 	GetPrivacyRequest(ctx context.Context, id uuid.UUID) (*PrivacyRequest, error)
-	
+
 	// Preferences
 	GetPrivacyPreferences(ctx context.Context, userID uuid.UUID) (*PrivacyPreference, error)
 	UpdatePrivacyPreferences(ctx context.Context, prefs *PrivacyPreference) error
-	
+
 	// Consent
 	RecordConsent(ctx context.Context, record *ConsentRecord) error
 	WithdrawConsent(ctx context.Context, userID uuid.UUID, consentType string) error
-	
+
 	// Audit
 	LogAction(ctx context.Context, log *AuditLog) error
 }
