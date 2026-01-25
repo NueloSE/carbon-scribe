@@ -289,3 +289,17 @@ type AlertQuery struct {
 type AcknowledgeAlertRequest struct {
 	AcknowledgedBy string `json:"acknowledged_by" binding:"required"`
 }
+
+// ServiceUptime represents uptime statistics for a service
+type ServiceUptime struct {
+	ServiceName string  `json:"service_name"`
+	Uptime24h   float64 `json:"uptime_24h"`
+	Uptime7d    float64 `json:"uptime_7d"`
+	Uptime30d   float64 `json:"uptime_30d"`
+}
+
+// UptimeResponse represents the response for the uptime statistics endpoint
+type UptimeResponse struct {
+	Services  []ServiceUptime `json:"services"`
+	Timestamp time.Time       `json:"timestamp"`
+}

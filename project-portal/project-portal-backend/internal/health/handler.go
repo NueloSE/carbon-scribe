@@ -44,6 +44,9 @@ func RegisterRoutes(r *gin.Engine, h *Handler) {
 
 		// Dependencies
 		v1.GET("/dependencies", h.GetDependencies)
+
+		// Uptime
+		v1.GET("/uptime", h.GetUptimeStats)
 	}
 }
 
@@ -292,4 +295,23 @@ func (h *Handler) GetDependencies(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dependencies)
+}
+
+// ========== Uptime ==========
+
+// GetUptimeStats returns uptime statistics for monitored services
+// @Summary Get uptime statistics
+// @Description Get uptime percentages for all monitored services for the last 24h, 7d, and 30d
+// @Tags health
+// @Produce json
+// @Success 200 {object} UptimeResponse
+// @Router /api/v1/health/uptime [get]
+func (h *Handler) GetUptimeStats(c *gin.Context) {
+	stats, err := h.service.GetUptimeStats(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
 }

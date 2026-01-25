@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -31,6 +32,9 @@ type Repository interface {
 
 	// Dependencies
 	ListServiceDependencies(ctx context.Context) ([]ServiceDependency, error)
+
+	// Uptime
+	CalculateUptimePercentage(ctx context.Context, serviceName string, startTime time.Time) (float64, error)
 }
 
 // repository implements the Repository interface
@@ -162,4 +166,31 @@ func (r *repository) ListServiceDependencies(ctx context.Context) ([]ServiceDepe
 	var dependencies []ServiceDependency
 	err := r.db.WithContext(ctx).Find(&dependencies).Error
 	return dependencies, err
+}
+
+// ========== Uptime ==========
+
+func (r *repository) CalculateUptimePercentage(ctx context.Context, serviceName string, startTime time.Time) (float64, error) {
+	var stats struct {
+		Total   int64
+		Success int64
+	}
+
+	// Join health_check_results with service_health_checks to filter by service_name
+	err := r.db.WithContext(ctx).
+		Table("health_check_results").
+		Select("COUNT(*) as total, COUNT(*) FILTER (WHERE success = true) as success").
+		Joins("JOIN service_health_checks ON health_check_results.check_id = service_health_checks.id").
+		Where("service_health_checks.service_name = ? AND health_check_results.check_time >= ?", serviceName, startTime).
+		Scan(&stats).Error
+
+	if err != nil {
+		return 0, err
+	}
+
+	if stats.Total == 0 {
+		return 100.0, nil // Default to 100% if no data
+	}
+
+	return float64(stats.Success) * 100.0 / float64(stats.Total), nil
 }

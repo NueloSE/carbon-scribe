@@ -32,6 +32,9 @@ type Service interface {
 
 	// Dependencies
 	GetDependencies(ctx context.Context) ([]ServiceDependency, error)
+
+	// Uptime
+	GetUptimeStats(ctx context.Context) (UptimeResponse, error)
 }
 
 const defaultServiceName = "carbon-scribe-project-portal"
@@ -247,4 +250,51 @@ func (s *service) GetDailyReport(ctx context.Context) (*SystemStatusSnapshot, er
 
 func (s *service) GetDependencies(ctx context.Context) ([]ServiceDependency, error) {
 	return s.repo.ListServiceDependencies(ctx)
+}
+
+// ========== Uptime ==========
+
+func (s *service) GetUptimeStats(ctx context.Context) (UptimeResponse, error) {
+	checks, err := s.repo.ListServiceHealthChecks(ctx)
+	if err != nil {
+		return UptimeResponse{}, fmt.Errorf("failed to list health checks: %w", err)
+	}
+
+	// Unique service names
+	serviceNames := make(map[string]struct{})
+	for _, check := range checks {
+		serviceNames[check.ServiceName] = struct{}{}
+	}
+
+	now := time.Now()
+	var serviceUptimes []ServiceUptime
+
+	for name := range serviceNames {
+		u24h, err := s.repo.CalculateUptimePercentage(ctx, name, now.Add(-24*time.Hour))
+		if err != nil {
+			return UptimeResponse{}, fmt.Errorf("failed to calculate 24h uptime for %s: %w", name, err)
+		}
+
+		u7d, err := s.repo.CalculateUptimePercentage(ctx, name, now.Add(-7*24*time.Hour))
+		if err != nil {
+			return UptimeResponse{}, fmt.Errorf("failed to calculate 7d uptime for %s: %w", name, err)
+		}
+
+		u30d, err := s.repo.CalculateUptimePercentage(ctx, name, now.Add(-30*24*time.Hour))
+		if err != nil {
+			return UptimeResponse{}, fmt.Errorf("failed to calculate 30d uptime for %s: %w", name, err)
+		}
+
+		serviceUptimes = append(serviceUptimes, ServiceUptime{
+			ServiceName: name,
+			Uptime24h:   u24h,
+			Uptime7d:    u7d,
+			Uptime30d:   u30d,
+		})
+	}
+
+	return UptimeResponse{
+		Services:  serviceUptimes,
+		Timestamp: now,
+	}, nil
 }

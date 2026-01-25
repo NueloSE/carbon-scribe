@@ -302,3 +302,50 @@ func TestDependenciesResource(t *testing.T) {
 	assert.Equal(t, "carbon-scribe-api", deps[0].SourceService)
 	assert.Equal(t, "stellar-horizon", deps[0].TargetService)
 }
+
+func TestUptimeResource(t *testing.T) {
+	router, db := setupTestRouter(t)
+
+	// 1. Seed a test health check
+	testCheck := health.ServiceHealthCheck{
+		ServiceName: "uptime-test-service",
+		CheckType:   "http",
+		CheckConfig: datatypes.JSON([]byte(`{"url": "http://uptime-test.com"}`)),
+		IsEnabled:   true,
+	}
+	db.Create(&testCheck)
+
+	// 2. Seed results: 3 success, 1 failure = 75% uptime
+	now := time.Now()
+	results := []health.HealthCheckResult{
+		{CheckID: testCheck.ID, CheckTime: now.Add(-1 * time.Hour), Success: true, DurationMs: 100},
+		{CheckID: testCheck.ID, CheckTime: now.Add(-2 * time.Hour), Success: true, DurationMs: 100},
+		{CheckID: testCheck.ID, CheckTime: now.Add(-3 * time.Hour), Success: true, DurationMs: 100},
+		{CheckID: testCheck.ID, CheckTime: now.Add(-4 * time.Hour), Success: false, DurationMs: 100},
+	}
+	for _, r := range results {
+		db.Create(&r)
+	}
+
+	// 3. GET /uptime
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/health/uptime", nil)
+	router.ServeHTTP(w, req)
+
+	// 4. Validate
+	assert.Equal(t, http.StatusOK, w.Code)
+	var response health.UptimeResponse
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NotEmpty(t, response.Services)
+
+	var found bool
+	for _, s := range response.Services {
+		if s.ServiceName == "uptime-test-service" {
+			found = true
+			assert.Equal(t, 75.0, s.Uptime24h)
+			assert.Equal(t, 75.0, s.Uptime7d)
+			assert.Equal(t, 75.0, s.Uptime30d)
+		}
+	}
+	assert.True(t, found)
+}
