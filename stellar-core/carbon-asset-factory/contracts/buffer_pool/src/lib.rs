@@ -50,7 +50,7 @@ impl BufferPoolContract {
             return Err(Error::Unauthorized);
         }
 
-        admin.require_auth(); // Bug: should be caller.require_auth()
+        caller.require_auth();
 
         if has_custody_record(&env, token_id) {
             return Err(Error::AlreadyExists);
