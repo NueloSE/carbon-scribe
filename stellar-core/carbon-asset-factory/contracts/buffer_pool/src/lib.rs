@@ -80,6 +80,7 @@ impl BufferPoolContract {
         Ok(())
     }
 
+    /// Governance withdraws a credit from pool to replace an invalidated token.
     pub fn withdraw_to_replace(
         env: Env,
         governance_caller: Address,
@@ -98,8 +99,7 @@ impl BufferPoolContract {
             return Err(Error::TokenNotFound);
         }
 
-        let key = soroban_sdk::Symbol::short("custody");
-        env.storage().persistent().remove(&(key, token_id));
+        env.storage().persistent().remove(&(storage::CUSTODY, token_id));
 
         let tvl = get_total_value_locked(&env);
         set_total_value_locked(&env, tvl - 1);

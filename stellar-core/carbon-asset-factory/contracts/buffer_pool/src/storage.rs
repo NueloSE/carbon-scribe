@@ -14,6 +14,7 @@ const GOVERNANCE: Symbol = Symbol::short("gov");
 const CARBON_CONTRACT: Symbol = Symbol::short("carbon");
 const REPLENISH_PCT: Symbol = Symbol::short("rep_pct");
 const TVL: Symbol = Symbol::short("tvl");
+pub const CUSTODY: Symbol = Symbol::short("custody");
 
 pub fn get_admin(env: &Env) -> Address {
     env.storage().instance().get(&ADMIN).unwrap()
@@ -56,17 +57,14 @@ pub fn set_total_value_locked(env: &Env, tvl: i128) {
 }
 
 pub fn get_custody_record(env: &Env, token_id: u32) -> Option<CustodyRecord> {
-    let key = Symbol::short("custody");
-    env.storage().persistent().get(&(key, token_id))
+    env.storage().persistent().get(&(CUSTODY, token_id))
 }
 
 pub fn set_custody_record(env: &Env, token_id: u32, record: &CustodyRecord) {
-    let key = Symbol::short("custody");
-    env.storage().persistent().set(&(key, token_id), record);
+    env.storage().persistent().set(&(CUSTODY, token_id), record);
 }
 
 pub fn has_custody_record(env: &Env, token_id: u32) -> bool {
-    let key = Symbol::short("custody");
-    env.storage().persistent().has(&(key, token_id))
+    env.storage().persistent().has(&(CUSTODY, token_id))
 }
 
