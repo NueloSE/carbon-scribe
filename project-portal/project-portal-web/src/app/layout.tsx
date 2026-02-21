@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-linear-to-br from-emerald-50 via-white to-cyan-50 min-h-screen`}>
+      <body suppressHydrationWarning className={`${inter.className} bg-linear-to-br from-emerald-50 via-white to-cyan-50 min-h-screen`}>
         <FarmerProvider>
           <ToastContainer />
           <PortalNavbar />
