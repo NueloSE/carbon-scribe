@@ -8,9 +8,19 @@ import { StellarModule } from './stellar/stellar.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { CacheModule } from './cache/cache.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [RetirementModule, ComplianceModule, MarketplaceModule, StellarModule, WebhooksModule, AnalyticsModule, CacheModule],
+  imports: [
+    RetirementModule,
+    ComplianceModule,
+    MarketplaceModule,
+    StellarModule,
+    WebhooksModule,
+    AnalyticsModule,
+    CacheModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

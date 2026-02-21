@@ -10,7 +10,9 @@ export class CacheService {
 
   constructor(private readonly redisService: RedisService) {}
 
-  private async withClient<T>(fn: (client: any) => Promise<T>): Promise<T | undefined> {
+  private async withClient<T>(
+    fn: (client: any) => Promise<T>,
+  ): Promise<T | undefined> {
     const client = this.redisService.getClient();
     if (!client || !this.redisService.isHealthy()) {
       return undefined;
@@ -45,7 +47,12 @@ export class CacheService {
     }
   }
 
-  async set<T>(key: string, value: T, ttlSeconds?: number, tags?: string[]): Promise<void> {
+  async set<T>(
+    key: string,
+    value: T,
+    ttlSeconds?: number,
+    tags?: string[],
+  ): Promise<void> {
     const payloadString = JSON.stringify(value);
     let compressed = false;
     let data: string;
@@ -100,7 +107,9 @@ export class CacheService {
     );
   }
 
-  async mset<T>(entries: { key: string; value: T; ttlSeconds?: number; tags?: string[] }[]): Promise<void> {
+  async mset<T>(
+    entries: { key: string; value: T; ttlSeconds?: number; tags?: string[] }[],
+  ): Promise<void> {
     for (const entry of entries) {
       await this.set(entry.key, entry.value, entry.ttlSeconds, entry.tags);
     }
@@ -156,14 +165,15 @@ export class CacheService {
 
   async getStats(): Promise<CacheStats> {
     const base: CacheStats = { hits: 0, misses: 0, keys: 0 };
-    const statsRaw = await this.withClient<string>((c) => c.get(CACHE_STATS_KEY));
+    const statsRaw = await this.withClient<string>((c) =>
+      c.get(CACHE_STATS_KEY),
+    );
     if (statsRaw) {
       try {
         const parsed = JSON.parse(statsRaw);
         base.hits = parsed.hits || 0;
         base.misses = parsed.misses || 0;
-      } catch {
-      }
+      } catch {}
     }
     const info = await this.withClient((c) => c.info('stats'));
     if (info) {
@@ -203,8 +213,7 @@ export class CacheService {
       if (current) {
         try {
           stats = JSON.parse(current);
-        } catch {
-        }
+        } catch {}
       }
       stats[field] += 1;
       await c.set(CACHE_STATS_KEY, JSON.stringify(stats));

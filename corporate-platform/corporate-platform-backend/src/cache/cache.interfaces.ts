@@ -17,4 +17,3 @@ export interface CacheStats {
   memoryUsage?: number;
   evictions?: number;
 }
-

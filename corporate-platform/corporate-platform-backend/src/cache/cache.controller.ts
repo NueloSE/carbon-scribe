@@ -18,4 +18,3 @@ export class CacheController {
     return { cleared: true };
   }
 }
-

@@ -21,4 +21,3 @@ import { AdminGuard } from './admin.guard';
   exports: [RedisService, CacheService],
 })
 export class CacheModule {}
-

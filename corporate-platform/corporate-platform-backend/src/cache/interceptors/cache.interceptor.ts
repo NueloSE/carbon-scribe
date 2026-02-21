@@ -22,16 +22,14 @@ export class CacheInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const handler = context.getHandler();
     const target = context.getClass();
-    const cacheable =
-      this.reflector.getAllAndOverride<CacheableOptions>(
-        CACHEABLE_METADATA_KEY,
-        [handler, target],
-      );
-    const evict =
-      this.reflector.getAllAndOverride<CacheEvictOptions>(
-        CACHE_EVICT_METADATA_KEY,
-        [handler, target],
-      );
+    const cacheable = this.reflector.getAllAndOverride<CacheableOptions>(
+      CACHEABLE_METADATA_KEY,
+      [handler, target],
+    );
+    const evict = this.reflector.getAllAndOverride<CacheEvictOptions>(
+      CACHE_EVICT_METADATA_KEY,
+      [handler, target],
+    );
 
     if (!cacheable && !evict) {
       return next.handle();
