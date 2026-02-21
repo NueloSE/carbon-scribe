@@ -80,10 +80,7 @@ export class AuthService {
     });
 
     const session = await this.createSession(user.id, metadata);
-    const { accessToken, refreshToken, payload } = this.generateTokens(
-      user,
-      session.id,
-    );
+    const { accessToken, refreshToken } = this.generateTokens(user, session.id);
 
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
