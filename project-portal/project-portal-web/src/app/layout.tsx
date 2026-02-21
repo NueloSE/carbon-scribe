@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import './globals.css';
+import PortalNavbar from '@/components/PortalNavbar';
+import PortalSidebar from '@/components/PortalSidebar';
+import { FarmerProvider } from '@/contexts/FarmerContext';
+import ToastContainer from '@/components/ui/Toast';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'CarbonScribe Project Portal - Farmer Dashboard',
@@ -14,7 +19,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body suppressHydrationWarning className={`${inter.className} bg-linear-to-br from-emerald-50 via-white to-cyan-50 min-h-screen`}>
+        <FarmerProvider>
+          <ToastContainer />
+          <PortalNavbar />
+          <div className="flex">
+            <PortalSidebar />
+            <main className="flex-1 p-4 md:p-6 lg:p-8 transition-all duration-300">
+              {children}
+            </main>
+          </div>
+        </FarmerProvider>
+      </body>
     </html>
   );
 }
