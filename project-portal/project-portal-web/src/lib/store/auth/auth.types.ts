@@ -30,18 +30,20 @@ export interface RegisterPayload {
   password: string;
 }
 
-export interface AuthState {
+export type AuthLoadingState = {
+  login: boolean;
+  register: boolean;
+  refresh: boolean;
+};
+
+export type AuthSlice = {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
 
   isHydrated: boolean;
-  loading: {
-    login: boolean;
-    register: boolean;
-    refresh: boolean;
-  };
-  error: string | null;
+  authLoading: AuthLoadingState;
+  authError: string | null;
 
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterPayload) => Promise<void>;
@@ -49,4 +51,4 @@ export interface AuthState {
   refreshToken: () => Promise<void>;
   clearError: () => void;
   setHydrated: (v: boolean) => void;
-}
+};

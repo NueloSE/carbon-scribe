@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { createAuthSlice } from "./auth/auth.slice";
+import { createAuthSlice } from "../lib/store/auth/auth.slice";
 import { setAuthToken } from "@/lib/api/axios";
 
 export const useStore = create<any>()(

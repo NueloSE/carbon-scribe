@@ -4,7 +4,7 @@ import type {
   RegisterPayload,
   AuthResponse,
   User,
-} from "@/store/auth/auth.types";
+} from "@/lib/store/auth/auth.types";
 
 // These shapes must match backend responses.
 function normalizeAuthResponse(data: any): AuthResponse {

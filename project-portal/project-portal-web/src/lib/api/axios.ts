@@ -1,3 +1,4 @@
+import { showToast } from "@/components/ui/Toast";
 import axios, { AxiosError } from "axios";
 
 export const API_BASE_URL =
@@ -25,7 +26,10 @@ api.interceptors.response.use(
   (res) => res,
   (err: AxiosError) => {
     const status = err.response?.status;
-    if (status === 401 && onUnauthorized) onUnauthorized();
+    if (status === 401 && onUnauthorized) {
+      showToast("error", "Session expired. Please sign in again.");
+      onUnauthorized();
+    }
     return Promise.reject(err);
   },
 );

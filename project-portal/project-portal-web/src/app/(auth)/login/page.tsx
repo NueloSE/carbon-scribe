@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useStore } from '@/store/store';
+import { useStore } from '@/lib/store/store';
+import { Mail, Lock, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
+import { showToast } from '@/components/ui/Toast';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,8 +13,8 @@ export default function LoginPage() {
 
   // Store actions/state
   const login = useStore((s) => s.login);
-  const serverError = useStore((s) => s.error);
-  const loading = useStore((s) => s.loading.login);
+  const serverError = useStore((s) => s.authError);
+  const loading = useStore((s) => s.authLoading.login);
   const clearError = useStore((s) => s.clearError);
 
   // Form State
@@ -55,96 +57,105 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
+      showToast('success', 'Signed in successfully');
       router.replace(next);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login submission error:', err);
+      showToast('error', err?.message ?? 'Login failed');
     }
   }
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-        <h1 className="text-2xl font-bold text-gray-900">Login</h1>
-        <p className="text-gray-600 mt-1">Sign in to your portal.</p>
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header */}
+      <div className="bg-linear-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-white">
+        <div className="flex flex-col md:flex-row md:items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Welcome back</h1>
+            <p className="text-emerald-100">Sign in to manage your projects and carbon credits</p>
+          </div>
+          <button
+            onClick={() => router.push('/register')}
+            className="mt-4 md:mt-0 px-6 py-3 bg-white text-emerald-700 rounded-xl font-semibold hover:bg-gray-100 transition-colors flex items-center"
+          >
+            <span>Create Account</span>
+            <ChevronRight className="w-5 h-5 ml-2" />
+          </button>
+        </div>
+      </div>
 
-        {/* Validation Error Banner */}
-        {hasFormErrors && (
-          <div className="mt-4 p-3 rounded-lg bg-yellow-50 text-yellow-800 border border-yellow-200 text-sm">
-            Please fix the highlighted fields below.
+      {/* Form Card */}
+      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 max-w-lg mx-auto">
+        {(hasFormErrors || serverError) && (
+          <div
+            className={`mb-4 p-3 rounded-lg border text-sm flex items-start gap-2 ${
+              serverError
+                ? 'bg-red-50 text-red-700 border-red-200'
+                : 'bg-yellow-50 text-yellow-800 border-yellow-200'
+            }`}
+          >
+            <AlertCircle className="w-5 h-5 mt-0.5" />
+            <div>
+              <div className="font-medium">
+                {serverError ? 'Sign in failed' : 'Please fix the highlighted fields'}
+              </div>
+              <div className="opacity-90">
+                {serverError || 'Check your email and password and try again.'}
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Server/API Error Banner */}
-        {serverError && (
-          <div className="mt-4 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm">
-            {serverError}
-          </div>
-        )}
-
-        <form onSubmit={onSubmit} className="mt-6 space-y-4 text-black">
+        <form onSubmit={onSubmit} className="space-y-4 text-black">
           <div>
             <label className="text-sm font-medium text-gray-700">Email</label>
-            <input
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (formErrors.email) setFormErrors(prev => ({ ...prev, email: undefined }));
-              }}
-              className={`mt-1 w-full px-3 py-2 border rounded-lg outline-none transition-all focus:ring-2 focus:ring-emerald-500
-                ${formErrors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-              `}
-              placeholder="you@domain.com"
-              type="text"
-              autoComplete="email"
-            />
-            {formErrors.email && (
-              <p className="mt-1 text-sm text-red-600 animate-in fade-in slide-in-from-top-1">
-                {formErrors.email}
-              </p>
-            )}
+            <div className="relative mt-1">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (formErrors.email) setFormErrors((p) => ({ ...p, email: undefined }));
+                }}
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none transition-colors focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                  formErrors.email ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="you@domain.com"
+                type="text"
+                autoComplete="email"
+              />
+            </div>
+            {formErrors.email && <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>}
           </div>
 
           <div>
             <label className="text-sm font-medium text-gray-700">Password</label>
-            <input
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (formErrors.password) setFormErrors(prev => ({ ...prev, password: undefined }));
-              }}
-              className={`mt-1 w-full px-3 py-2 border rounded-lg outline-none transition-all focus:ring-2 focus:ring-emerald-500
-                ${formErrors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'}
-              `}
-              placeholder="••••••••"
-              type="password"
-              autoComplete="current-password"
-            />
-            {formErrors.password && (
-              <p className="mt-1 text-sm text-red-600 animate-in fade-in slide-in-from-top-1">
-                {formErrors.password}
-              </p>
-            )}
+            <div className="relative mt-1">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (formErrors.password) setFormErrors((p) => ({ ...p, password: undefined }));
+                }}
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none transition-colors focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                  formErrors.password ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="••••••••"
+                type="password"
+                autoComplete="current-password"
+              />
+            </div>
+            {formErrors.password && <p className="mt-1 text-sm text-red-600">{formErrors.password}</p>}
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 mt-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2"
           >
-            {loading ? 'Signing in...' : 'Login'}
-          </button>
-
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-200"></span></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-500">Or</span></div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => router.push('/register')}
-            className="w-full py-2 rounded-lg border border-gray-300 text-gray-900 font-medium hover:bg-gray-50 transition-colors"
-          >
-            Create account
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading ? 'Signing in…' : 'Login'}
           </button>
         </form>
       </div>

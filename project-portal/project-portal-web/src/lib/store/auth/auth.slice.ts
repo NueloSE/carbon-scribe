@@ -1,17 +1,15 @@
 import type { StateCreator } from "zustand";
-import type { AuthState, RegisterPayload } from "./auth.types";
+import type { StoreState } from "../store";
+import type { RegisterPayload, AuthSlice } from "./auth.types";
 import { loginApi, registerApi, pingApi } from "@/lib/api/auth.api";
 import { setAuthToken, setOnUnauthorized } from "@/lib/api/axios";
-
-export type StoreState = AuthState;
 
 export const createAuthSlice: StateCreator<
   StoreState,
   [["zustand/persist", unknown]],
   [],
-  AuthState
+  AuthSlice
 > = (set, get) => {
-  // hook axios 401 -> logout
   setOnUnauthorized(() => get().logout());
 
   return {
@@ -20,15 +18,18 @@ export const createAuthSlice: StateCreator<
     isAuthenticated: false,
 
     isHydrated: false,
-    loading: { login: false, register: false, refresh: false },
-    error: null,
+    authLoading: { login: false, register: false, refresh: false },
+    authError: null,
 
     setHydrated: (v) => set({ isHydrated: v }),
 
-    clearError: () => set({ error: null }),
+    clearError: () => set({ authError: null }),
 
     login: async (email, password) => {
-      set((s) => ({ loading: { ...s.loading, login: true }, error: null }));
+      set((s) => ({
+        authLoading: { ...s.authLoading, login: true },
+        authError: null,
+      }));
       try {
         const { token, user } = await loginApi({ email, password });
         setAuthToken(token);
@@ -36,42 +37,44 @@ export const createAuthSlice: StateCreator<
           token,
           user,
           isAuthenticated: true,
-          loading: { ...get().loading, login: false },
+          authLoading: { ...get().authLoading, login: false },
         });
       } catch (e: any) {
         const msg = e?.response?.data?.error || e?.message || "Login failed";
-        console.log("Login error:", msg);
-        set((s) => ({ loading: { ...s.loading, login: false }, error: msg }));
+        set((s) => ({
+          authLoading: { ...s.authLoading, login: false },
+          authError: msg,
+        }));
         throw e;
       }
     },
 
     register: async (data: RegisterPayload) => {
-      set((s) => ({ loading: { ...s.loading, register: true }, error: null }));
+      set((s) => ({
+        authLoading: { ...s.authLoading, register: true },
+        authError: null,
+      }));
       try {
         const res: any = await registerApi(data);
 
-        // If backend returns token+user, auto-authenticate.
         if (res?.token && res?.user) {
           setAuthToken(res.token);
           set({
             token: res.token,
             user: res.user,
             isAuthenticated: true,
-            loading: { ...get().loading, register: false },
+            authLoading: { ...get().authLoading, register: false },
           });
           return;
         }
 
-        // Otherwise: registration succeeded, but you still need to login
-        set((s) => ({ loading: { ...s.loading, register: false } }));
+        set((s) => ({ authLoading: { ...s.authLoading, register: false } }));
       } catch (e: any) {
         const msg =
           e?.response?.data?.error || e?.message || "Registration failed";
-        console.log("Registration error:", msg);
         set((s) => ({
-          loading: { ...s.loading, register: false },
-          error: msg,
+          authLoading: { ...s.authLoading, register: false },
+          authError: msg,
         }));
         throw e;
       }
@@ -83,10 +86,9 @@ export const createAuthSlice: StateCreator<
         token: null,
         user: null,
         isAuthenticated: false,
-        error: null,
-        loading: { login: false, register: false, refresh: false },
+        authError: null,
+        authLoading: { login: false, register: false, refresh: false },
       });
-      // hard redirect to avoid protected UI flashing
       if (typeof window !== "undefined") window.location.href = "/login";
     },
 
@@ -94,16 +96,16 @@ export const createAuthSlice: StateCreator<
       const token = get().token;
       if (!token) return;
 
-      set((s) => ({ loading: { ...s.loading, refresh: true } }));
+      set((s) => ({ authLoading: { ...s.authLoading, refresh: true } }));
       try {
         setAuthToken(token);
-        await pingApi(); // should 401 if invalid/expired
+        await pingApi();
         set((s) => ({
           isAuthenticated: true,
-          loading: { ...s.loading, refresh: false },
+          authLoading: { ...s.authLoading, refresh: false },
         }));
       } catch {
-        set((s) => ({ loading: { ...s.loading, refresh: false } }));
+        set((s) => ({ authLoading: { ...s.authLoading, refresh: false } }));
         get().logout();
       }
     },
