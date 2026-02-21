@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -253,6 +254,9 @@ func initDatabase(config *config.Config) (*gorm.DB, error) {
 func runAllMigrations(db *gorm.DB) error {
 	// Auto-migrate all models from all modules
 	err := db.AutoMigrate(
+		// Project models
+		&project.Project{},
+
 		// Collaboration models
 		&collaboration.ProjectMember{},
 		&collaboration.ProjectInvitation{},
@@ -334,7 +338,22 @@ func corsMiddleware() gin.HandlerFunc {
 			allowedOrigins = "*"
 		}
 
-		c.Writer.Header().Set("Access-Control-Allow-Origin", allowedOrigins)
+		origin := c.Request.Header.Get("Origin")
+		allowOrigin := "*"
+		if allowedOrigins != "*" {
+			for _, o := range strings.Split(allowedOrigins, ",") {
+				if o == origin {
+					allowOrigin = origin
+					break
+				}
+			}
+			// If not matching, fallback to the first origin so the header is always valid
+			if allowOrigin == "*" {
+				allowOrigin = strings.Split(allowedOrigins, ",")[0]
+			}
+		}
+
+		c.Writer.Header().Set("Access-Control-Allow-Origin", allowOrigin)
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-User-ID")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")

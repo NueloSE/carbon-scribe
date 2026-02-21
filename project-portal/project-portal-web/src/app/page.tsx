@@ -1,13 +1,22 @@
 'use client';
 
+import { useEffect } from 'react';
 import ProjectStatsDashboard from '@/components/dashboard/ProjectStatsDashboard';
 import ActiveProjectsGrid from '@/components/projects/ActiveProjectsGrid';
 import MonitoringAlerts from '@/components/monitoring/MonitoringAlerts';
 import SatelliteInsights from '@/components/insights/SatelliteInsights';
 import TokenizationStatus from '@/components/financing/TokenizationStatus';
 import QuickActionsPanel from '@/components/actions/QuickActionsPanel';
+import { useStore } from '@/lib/store/store';
 
 export default function ProjectPortalHome() {
+  const fetchProjects = useStore((state) => state.fetchProjects);
+
+  // Fetch projects on mount
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Welcome Banner */}
@@ -15,7 +24,7 @@ export default function ProjectPortalHome() {
         <div className="flex flex-col md:flex-row md:items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Welcome back, Farmer Samuel! 🌱</h1>
-            <p className="text-emerald-100 opacity-90">Your land is sequestering carbon right now. Let's grow together.</p>
+            <p className="text-emerald-100 opacity-90">Your land is sequestering carbon right now. Let&apos;s grow together.</p>
           </div>
           <div className="mt-4 md:mt-0">
             <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full">
