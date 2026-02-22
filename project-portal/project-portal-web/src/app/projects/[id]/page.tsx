@@ -1,89 +1,100 @@
-// File: src/app/projects/[id]/page.tsx
 'use client';
 
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
   MapPin, 
   Calendar, 
-  Users, 
-  Trees, 
-  Coins, 
-  BarChart3, 
-  Download,
-  Share2,
-  Eye,
-  Edit,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Globe,
+  Users,
+  Trees,
+  Coins,
   Droplets,
-  Leaf
+  Leaf,
+  Share2,
+  Edit,
+  AlertCircle,
+  Loader2,
+  Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
-
-const projectDetails = {
-  1: {
-    name: 'Amazon Rainforest Restoration',
-    type: 'Reforestation',
-    location: 'Amazon Basin, Brazil',
-    coordinates: '-3.4653, -62.2159',
-    area: '12.5 hectares',
-    startDate: 'January 15, 2023',
-    duration: '5 years',
-    farmers: 24,
-    carbonCredits: 450,
-    revenue: '$2,250',
-    progress: 85,
-    icon: '🌳',
-    status: 'active',
-    description: 'Large-scale reforestation project in degraded Amazon rainforest areas, focusing on native species restoration and biodiversity conservation.',
-    methodology: 'VM0007 - Afforestation/Reforestation',
-    verification: 'Verified Carbon Standard (VCS)',
-    verifier: 'SustainCERT',
-    biodiversity: 'High',
-    waterImpact: '12,500 L/day saved',
-    communityImpact: 'Jobs created for local communities',
-    
-    // Detailed metrics
-    metrics: [
-      { label: 'Trees Planted', value: '12,458', icon: Trees, change: '+8%' },
-      { label: 'Carbon Sequestered', value: '450 tCO₂', icon: Coins, change: '+12%' },
-      { label: 'Biodiversity Index', value: '0.78', icon: Leaf, change: '+5%' },
-      { label: 'Water Retention', value: '92%', icon: Droplets, change: '+15%' },
-    ],
-    
-    // Timeline
-    timeline: [
-      { date: 'Jan 2023', event: 'Project Initiation', status: 'completed' },
-      { date: 'Mar 2023', event: 'First Planting Phase', status: 'completed' },
-      { date: 'Jun 2023', event: 'Initial Verification', status: 'completed' },
-      { date: 'Sep 2024', event: 'Second Planting Phase', status: 'current' },
-      { date: 'Dec 2025', event: 'Final Verification', status: 'upcoming' },
-    ],
-    
-    // Documents
-    documents: [
-      { name: 'Project Design Document', date: 'Jan 10, 2023', size: '2.4 MB', type: 'PDF' },
-      { name: 'Monitoring Report Q3 2024', date: 'Oct 15, 2024', size: '3.1 MB', type: 'PDF' },
-      { name: 'Verification Certificate', date: 'Jun 30, 2023', size: '1.8 MB', type: 'PDF' },
-      { name: 'Satellite Imagery', date: 'Sep 20, 2024', size: '45.2 MB', type: 'ZIP' },
-    ]
-  }
-};
+import { useStore } from '@/lib/store/store';
+import DeleteProjectDialog from '@/components/projects/DeleteProjectDialog';
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const projectId = params.id as string;
+
+  const fetchProjectById = useStore((state) => state.fetchProjectById);
+  const selectedProject = useStore((state) => state.selectedProject);
+  const loading = useStore((state) => state.loading);
+  const errors = useStore((state) => state.errors);
+
   const [activeTab, setActiveTab] = useState('overview');
-  
-//   const project = projectDetails[params.id as keyof typeof projectDetails];
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-const project = projectDetails[params.id as unknown as keyof typeof projectDetails];
+  // Fetch project on mount
+  useEffect(() => {
+    if (projectId) {
+      fetchProjectById(projectId);
+    }
+  }, [projectId, fetchProjectById]);
 
-  
-  if (!project) {
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Loading state
+  if (loading.isFetching) {
+    return (
+      <div className="space-y-6 animate-fadeIn">
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+          <span className="ml-3 text-gray-600 font-medium">Loading project details...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (errors.fetch) {
+    return (
+      <div className="space-y-6 animate-fadeIn">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back to Projects
+        </button>
+        <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to load project</h2>
+          <p className="text-gray-600 mb-4">{errors.fetch}</p>
+          <button
+            onClick={() => fetchProjectById(projectId)}
+            className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // No project found
+  if (!selectedProject) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Project not found</h2>
@@ -96,6 +107,16 @@ const project = projectDetails[params.id as unknown as keyof typeof projectDetai
       </div>
     );
   }
+
+  const project = selectedProject;
+
+  // Metrics derived from project data
+  const metrics = [
+    { label: 'Carbon Credits', value: `${project.carbon_credits} tCO₂`, icon: Coins, change: `${project.progress}%` },
+    { label: 'Area Covered', value: `${project.area} ha`, icon: Trees, change: 'Active' },
+    { label: 'Farmers Involved', value: `${project.farmers}`, icon: Users, change: 'Enrolled' },
+    { label: 'Progress', value: `${project.progress}%`, icon: Leaf, change: project.status },
+  ];
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -110,6 +131,13 @@ const project = projectDetails[params.id as unknown as keyof typeof projectDetai
         </button>
         
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowDeleteDialog(true)}
+            className="px-4 py-2 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </button>
           <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center">
             <Edit className="w-4 h-4 mr-2" />
             Edit
@@ -142,7 +170,7 @@ const project = projectDetails[params.id as unknown as keyof typeof projectDetai
               </div>
               <div className="flex items-center">
                 <Calendar className="w-5 h-5 mr-2" />
-                <span>Started {project.startDate}</span>
+                <span>Started {formatDate(project.start_date)}</span>
               </div>
               <div className="flex items-center">
                 <Users className="w-5 h-5 mr-2" />
@@ -153,11 +181,14 @@ const project = projectDetails[params.id as unknown as keyof typeof projectDetai
           
           <div className="mt-6 md:mt-0">
             <div className="text-right">
-              <div className="text-2xl font-bold">{project.carbonCredits} tCO₂</div>
+              <div className="text-2xl font-bold">{project.carbon_credits} tCO₂</div>
               <div className="text-emerald-100">Carbon Credits Generated</div>
             </div>
             <div className="mt-4 inline-flex items-center px-4 py-2 bg-white text-emerald-700 rounded-full font-medium">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse" />
+              <div className={`w-2 h-2 rounded-full mr-2 ${
+                project.status === 'active' ? 'bg-emerald-500 animate-pulse' :
+                project.status === 'completed' ? 'bg-blue-500' : 'bg-amber-500'
+              }`} />
               {project.status.toUpperCase()} PROJECT
             </div>
           </div>
@@ -188,12 +219,12 @@ const project = projectDetails[params.id as unknown as keyof typeof projectDetai
             <div className="space-y-8">
               {/* Metrics Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {project.metrics.map((metric, index) => {
+                {metrics.map((metric, index) => {
                   const Icon = metric.icon;
                   return (
                     <div key={index} className="bg-gray-50 rounded-xl p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <div className={`p-3 rounded-lg bg-emerald-100 text-emerald-600`}>
+                        <div className="p-3 rounded-lg bg-emerald-100 text-emerald-600">
                           <Icon className="w-6 h-6" />
                         </div>
                         <span className="text-sm font-medium text-emerald-600">{metric.change}</span>
@@ -208,76 +239,120 @@ const project = projectDetails[params.id as unknown as keyof typeof projectDetai
               {/* Description & Details */}
               <div className="grid md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Project Description</h3>
-                  <p className="text-gray-600 leading-relaxed">{project.description}</p>
-                  
-                  <div className="mt-6 space-y-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">Project Details</h3>
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                      <span className="text-gray-600">Methodology</span>
-                      <span className="font-medium text-gray-900">{project.methodology}</span>
+                      <span className="text-gray-600">Project Type</span>
+                      <span className="font-medium text-gray-900">{project.type}</span>
                     </div>
                     <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                      <span className="text-gray-600">Verification Standard</span>
-                      <span className="font-medium text-gray-900">{project.verification}</span>
+                      <span className="text-gray-600">Area</span>
+                      <span className="font-medium text-gray-900">{project.area} hectares</span>
                     </div>
                     <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                      <span className="text-gray-600">Biodiversity Impact</span>
-                      <span className="font-medium text-gray-900">{project.biodiversity}</span>
+                      <span className="text-gray-600">Status</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        project.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                        project.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                      <span className="text-gray-600">Start Date</span>
+                      <span className="font-medium text-gray-900">{formatDate(project.start_date)}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                      <span className="text-gray-600">Created</span>
+                      <span className="font-medium text-gray-900">{formatDate(project.created_at)}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                      <span className="text-gray-600">Last Updated</span>
+                      <span className="font-medium text-gray-900">{formatDate(project.updated_at)}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Timeline */}
+                {/* Progress */}
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Project Timeline</h3>
-                  <div className="space-y-4">
-                    {project.timeline.map((item, index) => (
-                      <div key={index} className="flex items-start">
-                        <div className="mr-4 mt-1">
-                          {item.status === 'completed' ? (
-                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                              <CheckCircle className="w-5 h-5 text-emerald-600" />
-                            </div>
-                          ) : item.status === 'current' ? (
-                            <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center animate-pulse">
-                              <Clock className="w-5 h-5 text-amber-600" />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                              <AlertCircle className="w-5 h-5 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{item.event}</div>
-                          <div className="text-sm text-gray-600">{item.date}</div>
-                        </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-6">Project Progress</h3>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="font-medium text-gray-700">Overall Progress</span>
+                        <span className="font-bold text-gray-900">{project.progress}%</span>
                       </div>
-                    ))}
+                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-linear-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
+                          style={{ width: `${project.progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mt-8">
+                      <div className="bg-emerald-50 rounded-xl p-4 text-center">
+                        <div className="text-2xl font-bold text-emerald-700">{project.carbon_credits}</div>
+                        <div className="text-sm text-emerald-600">Credits Generated</div>
+                      </div>
+                      <div className="bg-blue-50 rounded-xl p-4 text-center">
+                        <div className="text-2xl font-bold text-blue-700">{project.farmers}</div>
+                        <div className="text-sm text-blue-600">Farmers Enrolled</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
+          {activeTab === 'monitoring' && (
+            <div className="text-center py-12">
+              <Droplets className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Monitoring Dashboard</h3>
+              <p className="text-gray-600">Real-time monitoring data will be available here once sensors are connected.</p>
+            </div>
+          )}
+
           {activeTab === 'documents' && (
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Project Documents</h3>
-              {project.documents.map((doc, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                  <div>
-                    <div className="font-medium text-gray-900">{doc.name}</div>
-                    <div className="text-sm text-gray-600">{doc.date} • {doc.size} • {doc.type}</div>
-                  </div>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <Download className="w-5 h-5 text-gray-600" />
-                  </button>
-                </div>
-              ))}
+            <div className="text-center py-12">
+              <Edit className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Project Documents</h3>
+              <p className="text-gray-600">No documents uploaded yet. Upload project documents to get started.</p>
+            </div>
+          )}
+
+          {activeTab === 'financing' && (
+            <div className="text-center py-12">
+              <Coins className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Financing Overview</h3>
+              <p className="text-gray-600">Financing details and carbon credit tokenization info will appear here.</p>
+            </div>
+          )}
+
+          {activeTab === 'team' && (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Team Members</h3>
+              <p className="text-gray-600">Team collaboration features are coming soon.</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Delete Dialog */}
+      {showDeleteDialog && (
+        <DeleteProjectDialog
+          projectId={project.id}
+          projectName={project.name}
+          isOpen={showDeleteDialog}
+          onClose={() => {
+            setShowDeleteDialog(false);
+            router.push('/projects');
+          }}
+        />
+      )}
     </div>
   );
 }
