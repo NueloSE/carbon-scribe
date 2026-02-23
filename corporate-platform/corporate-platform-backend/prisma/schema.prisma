@@ -7,14 +7,21 @@ generator client {
 }
 
 model Company {
-  id          String       @id @default(cuid())
-  name        String
-  retirements Retirement[]
-  users       User[]
-  carts       Cart[]
-  orders      Order[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                      String              @id @default(cuid())
+  name                    String
+  annualRetirementTarget  Float               @default(0)
+  netZeroTarget           Float               @default(0)
+  netZeroTargetYear       Int?
+  
+  retirements             Retirement[]
+  users                   User[]
+  carts                   Cart[]
+  orders                  Order[]
+
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  @@map("companies")
 }
 
 model Credit {
