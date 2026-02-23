@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, ConflictException, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { RESERVATION_MINUTES } from '../interfaces/cart.interface';

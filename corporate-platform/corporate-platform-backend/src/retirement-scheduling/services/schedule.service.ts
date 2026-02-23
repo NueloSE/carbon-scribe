@@ -25,7 +25,10 @@ export class ScheduleService {
       throw new BadRequestException('endDate must be after startDate');
     }
 
-    if (dto.creditSelection === 'specific' && (!dto.creditIds || !dto.creditIds.length)) {
+    if (
+      dto.creditSelection === 'specific' &&
+      (!dto.creditIds || !dto.creditIds.length)
+    ) {
       throw new BadRequestException(
         'creditIds are required when creditSelection is specific',
       );
@@ -82,7 +85,9 @@ export class ScheduleService {
   async update(companyId: string, id: string, dto: UpdateScheduleDto) {
     const existing = await this.getById(companyId, id);
 
-    const startDate = dto.startDate ? new Date(dto.startDate) : existing.startDate;
+    const startDate = dto.startDate
+      ? new Date(dto.startDate)
+      : existing.startDate;
     const endDate = dto.endDate ? new Date(dto.endDate) : existing.endDate;
     if (Number.isNaN(startDate.getTime())) {
       throw new BadRequestException('Invalid startDate');
@@ -147,7 +152,8 @@ export class ScheduleService {
       where: { id: existing.id },
       data: {
         isActive: true,
-        nextRunDate: existing.nextRunDate < new Date() ? new Date() : existing.nextRunDate,
+        nextRunDate:
+          existing.nextRunDate < new Date() ? new Date() : existing.nextRunDate,
       },
     });
   }

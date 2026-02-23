@@ -174,7 +174,9 @@ export class ExecutorService {
       };
     } catch (error) {
       const err = error as Error;
-      this.logger.error(`Execution failed for schedule ${scheduleId}: ${err.message}`);
+      this.logger.error(
+        `Execution failed for schedule ${scheduleId}: ${err.message}`,
+      );
 
       await this.prisma.scheduleExecution.update({
         where: { id: execution.id },
@@ -217,27 +219,29 @@ export class ExecutorService {
       const retireAmount = Math.min(remaining, credit.available);
       if (retireAmount <= 0) continue;
 
-      const retirement = await (this.prisma as any).$transaction(async (tx: any) => {
-        await tx.credit.update({
-          where: { id: credit.id },
-          data: { available: { decrement: retireAmount } },
-        });
+      const retirement = await (this.prisma as any).$transaction(
+        async (tx: any) => {
+          await tx.credit.update({
+            where: { id: credit.id },
+            data: { available: { decrement: retireAmount } },
+          });
 
-        return tx.retirement.create({
-          data: {
-            companyId: schedule.companyId,
-            userId: schedule.createdBy,
-            creditId: credit.id,
-            amount: retireAmount,
-            purpose: schedule.purpose,
-            purposeDetails: `Scheduled retirement: ${schedule.name}`,
-            priceAtRetirement: 10,
-            transactionHash: `tx_${Math.random().toString(36).slice(2, 10)}`,
-            transactionUrl: 'https://stellar.expert/explorer/testnet/tx/...',
-            verifiedAt: new Date(),
-          },
-        });
-      });
+          return tx.retirement.create({
+            data: {
+              companyId: schedule.companyId,
+              userId: schedule.createdBy,
+              creditId: credit.id,
+              amount: retireAmount,
+              purpose: schedule.purpose,
+              purposeDetails: `Scheduled retirement: ${schedule.name}`,
+              priceAtRetirement: 10,
+              transactionHash: `tx_${Math.random().toString(36).slice(2, 10)}`,
+              transactionUrl: 'https://stellar.expert/explorer/testnet/tx/...',
+              verifiedAt: new Date(),
+            },
+          });
+        },
+      );
 
       retirementIds.push(retirement.id);
       amountRetired += retireAmount;
@@ -252,7 +256,10 @@ export class ExecutorService {
   }
 
   private async selectCreditsForSchedule(schedule: any) {
-    if (schedule.creditSelection === 'specific' && schedule.creditIds.length > 0) {
+    if (
+      schedule.creditSelection === 'specific' &&
+      schedule.creditIds.length > 0
+    ) {
       return this.prisma.credit.findMany({
         where: {
           id: { in: schedule.creditIds },
